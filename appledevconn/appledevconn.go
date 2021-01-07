@@ -1,13 +1,64 @@
 package appledevconn
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/bitrise-io/go-utils/log"
+	"github.com/bitrise-io/xcode-project/pretty"
 )
+
+// Cookie ...
+type Cookie struct {
+	Name       string     `json:"name,omitempty"`
+	Value      string     `json:"value,omitempty"`
+	Domain     string     `json:"domain,omitempty"`
+	ForDomain  bool       `json:"for_domain,omitempty"`
+	Path       string     `json:"path,omitempty"`
+	Secure     bool       `json:"secure,omitempty"`
+	HTTPOnly   bool       `json:"httponly,omitempty"`
+	Expires    *time.Time `json:"expires,omitempty"`
+	MaxAge     int        `json:"max_age,omitempty"`
+	CreatedAt  *time.Time `json:"created_at,omitempty"`
+	AccessedAt *time.Time `json:"accessed_at,omitempty"`
+}
+
+// SessionConnection ...
+type SessionConnection struct {
+	AppleID              string              `json:"apple_id"`
+	Password             string              `json:"password"`
+	ConnectionExpiryDate string              `json:"connection_expiry_date"`
+	SessionCookie        map[string][]Cookie `json:"session_cookies"`
+}
+
+// JWTConnection ...
+type JWTConnection struct {
+	KeyID      string `json:"key_id"`
+	IssuerID   string `json:"issuer_id"`
+	PrivateKey string `json:"private_key"`
+}
+
+// Device ...
+type Device struct {
+	ID         int    `json:"id"`
+	UserID     int    `json:"user_id"`
+	DeviceID   string `json:"device_identifier"`
+	Title      string `json:"title"`
+	CreatedAt  string `json:"created_at"`
+	UpdatedAt  string `json:"updated_at"`
+	DeviceType string `json:"device_type"`
+}
+
+// AppleDeveloperConnection ...
+type AppleDeveloperConnection struct {
+	SessionConnection
+	JWTConnection
+	Devices []Device `json:"test_devices"`
+}
 
 // EnsureConnection ...
 func EnsureConnection() error {
@@ -29,7 +80,21 @@ func EnsureConnection() error {
 		return err
 	}
 
-	fmt.Println(string(body))
+	var conn AppleDeveloperConnection
+	if err := json.Unmarshal(body, &conn); err != nil {
+		return err
+	}
+
+	sessionConn := conn.SessionConnection
+	fmt.Printf("sessionConn:\n%s\n", pretty.Object(sessionConn))
+
+	jwtConn := conn.JWTConnection
+	fmt.Printf("jwtConn:\n%s\n", pretty.Object(jwtConn))
+
+	devices := conn.Devices
+	fmt.Printf("devices:\n%s\n", pretty.Object(devices))
+
+	// fmt.Println(string(body))
 
 	return nil
 }
