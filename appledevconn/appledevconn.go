@@ -29,7 +29,7 @@ func EnsureConnection() error {
 		return err
 	}
 
-	fmt.Println(body)
+	fmt.Println(string(body))
 
 	return nil
 }
