@@ -1,7 +1,12 @@
 package connections
 
 import (
+	"bytes"
+	"errors"
+	"fmt"
 	"net/http"
+	"strings"
+	"text/template"
 	"time"
 )
 
@@ -28,7 +33,47 @@ type SessionConnection struct {
 	AppleID              string              `json:"apple_id"`
 	Password             string              `json:"password"`
 	ConnectionExpiryDate string              `json:"connection_expiry_date"`
-	SessionCookie        map[string][]Cookie `json:"session_cookies"`
+	SessionCookies       map[string][]Cookie `json:"session_cookies"`
+}
+
+// FastlaneSession ...
+func (c SessionConnection) FastlaneSession() (string, error) {
+	var convertedCookies []string
+	var errs []string
+
+	for _, cookies := range c.SessionCookies {
+		for _, cookie := range cookies {
+			if convertedCookies == nil {
+				convertedCookies = append(convertedCookies, "---"+"\n")
+			}
+
+			tmpl, err := template.New("").Parse(`- !ruby/object:HTTP::Cookie
+	  name: {{.Name}}
+	  value: {{.Value}}
+	  domain: {{.Domain}}
+	  for_domain: {{.ForDomain}}
+	  path: "{{.Path}}"
+	`)
+			if err != nil {
+				errs = append(errs, fmt.Sprintf("Failed to create golang template for the cookie: %v", c))
+				continue
+			}
+
+			var b bytes.Buffer
+			err = tmpl.Execute(&b, cookie)
+			if err != nil {
+				errs = append(errs, fmt.Sprintf("Failed to parse cookie: %v", c))
+				continue
+			}
+
+			convertedCookies = append(convertedCookies, b.String()+"\n")
+		}
+	}
+
+	if len(errs) > 0 {
+		return "", errors.New(strings.Join(errs, "\n"))
+	}
+	return strings.Join(convertedCookies, ""), nil
 }
 
 // JWTConnection ...
