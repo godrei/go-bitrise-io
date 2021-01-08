@@ -51,9 +51,9 @@ type Device struct {
 
 // AppleDeveloperConnection ...
 type AppleDeveloperConnection struct {
-	SessionConnection
-	JWTConnection
-	Devices []Device `json:"test_devices"`
+	SessionConnection SessionConnection
+	JWTConnection     JWTConnection
+	Devices           []Device
 }
 
 // GetAppleDeveloperConnection ...
@@ -63,10 +63,20 @@ func (c *Client) GetAppleDeveloperConnection() (*AppleDeveloperConnection, error
 		return nil, err
 	}
 
-	var conn AppleDeveloperConnection
+	type data struct {
+		SessionConnection
+		JWTConnection
+		Devices []Device `json:"test_devices"`
+	}
+
+	var conn data
 	if err := c.do(req, &conn); err != nil {
 		return nil, err
 	}
 
-	return &conn, nil
+	return &AppleDeveloperConnection{
+		SessionConnection: conn.SessionConnection,
+		JWTConnection:     conn.JWTConnection,
+		Devices:           conn.Devices,
+	}, nil
 }
