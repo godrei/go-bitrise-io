@@ -66,6 +66,10 @@ func (c *BitriseClient) GetAppleDeveloperConnection(buildURL, buildAPIToken stri
 		return nil, NetworkError{Status: resp.StatusCode, Body: string(body)}
 	}
 
+	fmt.Println("response:")
+	fmt.Println(string(body))
+	fmt.Println()
+
 	type data struct {
 		*SessionConnection
 		*JWTConnection
